@@ -1,0 +1,130 @@
+.ticket-details {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.ticket-info {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.resolution-info,
+.resolve-section,
+.reopen-section,
+.satisfaction-section,
+.satisfaction-info {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.resolution-info h3,
+.resolve-section h3,
+.reopen-section h3,
+.satisfaction-section h3,
+.satisfaction-info h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 1.2em;
+}
+
+textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.rating-input {
+  margin-bottom: 15px;
+}
+
+.rating-input label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.rating-input select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.error-message {
+  color: #dc3545;
+  padding: 10px;
+  margin-bottom: 15px;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+}
+
+/* Style dla różnych statusów zgłoszenia */
+.ticket-status {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.8em;
+}
+
+.status-new {
+  background-color: #e3f2fd;
+  color: #0d47a1;
+}
+.status-resolved {
+  background-color: #e8f5e9;
+  color: #1b5e20;
+}
+.status-reopened {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+/* Style dla ocen */
+.satisfaction-info {
+  text-align: center;
+}
+
+.satisfaction-info .rating {
+  font-size: 1.5em;
+  color: #f39c12;
+  margin: 10px 0;
+}
+
+/* Responsywność */
+@media (max-width: 768px) {
+  .ticket-details {
+    padding: 10px;
+  }
+
+  button {
+    width: 100%;
+  }
+}

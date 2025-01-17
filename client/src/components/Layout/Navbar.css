@@ -1,0 +1,63 @@
+.navbar {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+  font-weight: bold;
+  font-size: 1.4rem;
+}
+
+.nav-link {
+  position: relative;
+  padding: 0.5rem 1rem !important;
+  margin: 0 0.2rem;
+  transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.nav-link.active {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.alarm-badge {
+  position: relative;
+  top: -8px;
+  right: -5px;
+  padding: 0.35em 0.65em;
+  font-size: 0.75em;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Responsywność */
+@media (max-width: 768px) {
+  .navbar-nav {
+    padding: 1rem 0;
+  }
+
+  .nav-link {
+    padding: 0.75rem 1rem !important;
+    margin: 0.2rem 0;
+  }
+
+  .alarm-badge {
+    position: static;
+    margin-left: 0.5rem !important;
+  }
+}
