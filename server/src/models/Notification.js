@@ -8,7 +8,7 @@ const notificationSchema = new mongoose.Schema({
   },
   content: { type: String, required: true },
   type: String,
-  read: { type: Boolean, default: false },
+  status: { type: String, enum: ["read", "unread"], default: "unread" },
   createdAt: { type: Date, default: Date.now },
   relatedTicket: { type: mongoose.Schema.Types.ObjectId, ref: "Ticket" },
 });
