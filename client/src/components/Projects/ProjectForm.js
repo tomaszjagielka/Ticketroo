@@ -26,7 +26,7 @@ const ProjectForm = () => {
     manager: "",
   });
   const [roles, setRoles] = useState([]);
-  const [specialists, setSpecialists] = useState([]);
+  const [managers, setManagers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -68,15 +68,18 @@ const ProjectForm = () => {
     }
   }, []);
 
-  const fetchSpecialists = useCallback(async () => {
+  const fetchManagers = useCallback(async () => {
     try {
       const response = await api.get("/users");
-      const specialistUsers = response.data.filter(
-        (user) => user.role?.name === "Specjalista"
+      const managerUsers = response.data.filter(
+        (user) =>
+          user.role?.name === "Specjalista" ||
+          user.role?.name === "Developer" ||
+          user.role?.name === "Zarządca"
       );
-      setSpecialists(specialistUsers);
+      setManagers(managerUsers);
     } catch (error) {
-      console.error("Error fetching specialists:", error);
+      console.error("Error fetching managers:", error);
       throw error;
     }
   }, []);
@@ -86,7 +89,7 @@ const ProjectForm = () => {
       try {
         setLoading(true);
         setError(null);
-        await Promise.all([fetchRoles(), fetchSpecialists()]);
+        await Promise.all([fetchRoles(), fetchManagers()]);
         if (isEditing && projectId) {
           await fetchProjectDetails();
         }
@@ -98,7 +101,7 @@ const ProjectForm = () => {
       }
     };
     fetchData();
-  }, [projectId, isEditing, fetchProjectDetails, fetchRoles, fetchSpecialists]);
+  }, [projectId, isEditing, fetchProjectDetails, fetchRoles, fetchManagers]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -190,9 +193,9 @@ const ProjectForm = () => {
               }
               input={<OutlinedInput label="Manager projektu" />}
             >
-              {specialists.map((specialist) => (
-                <MenuItem key={specialist._id} value={specialist._id}>
-                  {specialist.login}
+              {managers.map((manager) => (
+                <MenuItem key={manager._id} value={manager._id}>
+                  {manager.login} ({manager.role?.name})
                 </MenuItem>
               ))}
             </Select>
