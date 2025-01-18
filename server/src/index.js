@@ -2347,7 +2347,7 @@ app.patch("/api/profile", authMiddleware, async (req, res) => {
 });
 
 // Start serwera
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3004;
 app.listen(PORT, () => {
   console.log(`Server port: ${PORT}`);
 });
