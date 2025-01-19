@@ -182,6 +182,31 @@ app.post("/api/tickets", authMiddleware, async (req, res) => {
 
     await ticket.save();
 
+    // Powiadomienie dla managera projektu
+    if (project.manager) {
+      await new Notification({
+        content: `Nowe zgłoszenie "${title}" zostało utworzone w projekcie ${project.name}`,
+        type: "new_ticket",
+        recipient: project.manager,
+      }).save();
+    }
+
+    // Powiadomienia dla subskrybentów projektu
+    const projectSubscribers = await Subscription.find({ project: projectId });
+    for (const subscription of projectSubscribers) {
+      // Nie wysyłaj powiadomienia twórcy zgłoszenia ani managerowi (który już dostał)
+      if (
+        subscription.user.toString() !== req.user.userId &&
+        subscription.user.toString() !== project.manager?.toString()
+      ) {
+        await new Notification({
+          content: `Nowe zgłoszenie "${title}" zostało utworzone w projekcie ${project.name}`,
+          type: "new_ticket",
+          recipient: subscription.user,
+        }).save();
+      }
+    }
+
     await logEvent(
       "CREATE_TICKET",
       req.user.userId,
@@ -643,6 +668,8 @@ app.post("/api/notifications", authMiddleware, async (req, res) => {
       content,
       type,
       recipient: recipientId,
+      createdAt: new Date(),
+      status: "unread",
     });
     await notification.save();
     res.status(201).json(notification);
@@ -656,7 +683,7 @@ app.get("/api/notifications", authMiddleware, async (req, res) => {
   try {
     const notifications = await Notification.find({
       recipient: req.user.userId,
-    }).sort("-sendDate");
+    }).sort("-createdAt");
     res.json(notifications);
   } catch (error) {
     res.status(500).json({ message: "Błąd podczas pobierania powiadomień" });

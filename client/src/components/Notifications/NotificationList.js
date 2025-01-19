@@ -108,7 +108,7 @@ const NotificationList = () => {
                 <div>
                   <Card.Text>{notification.content}</Card.Text>
                   <small className="notification-timestamp">
-                    {new Date(notification.sendDate).toLocaleString()}
+                    {new Date(notification.createdAt).toLocaleString()}
                   </small>
                 </div>
                 {notification.status === "unread" && (
