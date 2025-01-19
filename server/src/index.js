@@ -2386,6 +2386,43 @@ app.patch("/api/profile", authMiddleware, async (req, res) => {
   }
 });
 
+// Endpoint do usuwania projektu (tylko dla zarządcy)
+app.delete("/api/projects/:projectId", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).populate("role");
+    if (!user || user.role.name !== "Zarządca") {
+      return res.status(403).json({ message: "Brak uprawnień" });
+    }
+
+    const { projectId } = req.params;
+    const project = await Project.findById(projectId);
+
+    if (!project) {
+      return res.status(404).json({ message: "Nie znaleziono projektu" });
+    }
+
+    // Usuń wszystkie zgłoszenia związane z projektem
+    await Ticket.deleteMany({ project: projectId });
+
+    // Usuń wszystkie subskrypcje projektu
+    await Subscription.deleteMany({ project: projectId });
+
+    // Usuń projekt
+    await Project.findByIdAndDelete(projectId);
+
+    await logEvent(
+      "DELETE_PROJECT",
+      req.user.userId,
+      `Deleted project: ${project.name}`
+    );
+
+    res.json({ message: "Projekt został usunięty" });
+  } catch (error) {
+    console.error("Project deletion error:", error);
+    res.status(500).json({ message: "Błąd podczas usuwania projektu" });
+  }
+});
+
 // Start serwera
 const PORT = process.env.PORT || 3004;
 app.listen(PORT, () => {
