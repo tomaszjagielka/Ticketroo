@@ -42,7 +42,7 @@ const Navbar = () => {
     <BootstrapNavbar bg="light" expand="lg">
       <Container>
         <BootstrapNavbar.Brand as={Link} to="/">
-          System Zgłoszeń
+          Ticketroo
         </BootstrapNavbar.Brand>
         <BootstrapNavbar.Toggle aria-controls="basic-navbar-nav" />
         <BootstrapNavbar.Collapse id="basic-navbar-nav">
