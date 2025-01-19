@@ -1329,6 +1329,7 @@ app.post("/api/tickets/:ticketId/posts", authMiddleware, async (req, res) => {
       content,
       author: req.user.userId,
       ticket: ticketId,
+      title: "Comment",
     });
 
     await post.save();
@@ -1375,6 +1376,7 @@ app.post("/api/tickets/:ticketId/posts", authMiddleware, async (req, res) => {
     );
     res.status(201).json(post);
   } catch (error) {
+    console.error("Error adding post:", error);
     res.status(500).json({ message: "Błąd podczas dodawania posta" });
   }
 });
