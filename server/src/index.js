@@ -119,6 +119,19 @@ const checkPermission = (requiredPermissions) => async (req, res, next) => {
       return next();
     }
 
+    // Sprawdź czy użytkownik jest managerem projektu dla operacji na typach zgłoszeń
+    if (
+      (Array.isArray(requiredPermissions)
+        ? requiredPermissions.includes("MANAGE_TICKET_TYPES")
+        : requiredPermissions === "MANAGE_TICKET_TYPES") &&
+      req.params.projectId
+    ) {
+      const project = await Project.findById(req.params.projectId);
+      if (project && project.manager.toString() === user._id.toString()) {
+        return next();
+      }
+    }
+
     // Dla innych przypadków sprawdzamy standardowo uprawnienia
     const permissions = Array.isArray(requiredPermissions)
       ? requiredPermissions
@@ -1594,6 +1607,7 @@ app.get(
 app.get("/api/projects/:projectId", authMiddleware, async (req, res) => {
   try {
     const { projectId } = req.params;
+    const user = await User.findById(req.user.userId).populate("role");
 
     const project = await Project.findById(projectId)
       .populate("ticketTypes")
@@ -1603,26 +1617,42 @@ app.get("/api/projects/:projectId", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Nie znaleziono projektu" });
     }
 
+    // Sprawdź uprawnienia - zarządca widzi wszystko, manager widzi swój projekt, inni użytkownicy według ról
+    if (
+      user.role.name !== "Zarządca" &&
+      project.manager.toString() !== user._id.toString() &&
+      !project.visibleToRoles.includes(user.role._id)
+    ) {
+      return res.status(403).json({ message: "Brak uprawnień" });
+    }
+
     res.json(project);
   } catch (error) {
+    console.error("Error fetching project details:", error);
     res
       .status(500)
       .json({ message: "Błąd podczas pobierania szczegółów projektu" });
   }
 });
 
-// Endpoint do pobierania listy użytkowników (tylko dla zarządcy)
+// Endpoint do pobierania listy użytkowników (dla zarządcy i managerów projektów)
 app.get("/api/users", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).populate("role");
-    if (!user || user.role.name !== "Zarządca") {
+
+    // Sprawdź czy użytkownik jest zarządcą lub managerem jakiegoś projektu
+    const isManager = await Project.exists({ manager: user._id });
+
+    if (!user || (user.role.name !== "Zarządca" && !isManager)) {
       return res.status(403).json({ message: "Brak uprawnień" });
     }
 
+    // Pobierz użytkowników
     const users = await User.find().populate("role").select("-password");
 
     res.json(users);
   } catch (error) {
+    console.error("Error fetching users:", error);
     res.status(500).json({ message: "Błąd podczas pobierania użytkowników" });
   }
 });
@@ -2243,58 +2273,66 @@ app.get("/api/analytics/report", authMiddleware, async (req, res) => {
 });
 
 // Endpoint do aktualizacji projektu
-app.patch(
-  "/api/projects/:projectId",
-  authMiddleware,
-  checkPermission("MANAGE_PROJECTS"),
-  async (req, res) => {
-    try {
-      const { projectId } = req.params;
-      const { name, key, visibleToRoles, manager } = req.body;
+app.patch("/api/projects/:projectId", authMiddleware, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { name, key, visibleToRoles, manager } = req.body;
 
-      const project = await Project.findById(projectId);
-      if (!project) {
-        return res.status(404).json({ message: "Nie znaleziono projektu" });
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: "Nie znaleziono projektu" });
+    }
+
+    // Sprawdź uprawnienia - tylko zarządca lub manager projektu może edytować
+    const user = await User.findById(req.user.userId).populate("role");
+    if (
+      !user ||
+      (user.role.name !== "Zarządca" &&
+        project.manager.toString() !== user._id.toString())
+    ) {
+      return res.status(403).json({ message: "Brak uprawnień" });
+    }
+
+    // Sprawdź czy nowy klucz nie jest już używany przez inny projekt
+    if (key !== project.key) {
+      const existingProject = await Project.findOne({
+        key,
+        _id: { $ne: projectId },
+      });
+      if (existingProject) {
+        return res
+          .status(400)
+          .json({ message: "Projekt z tym kluczem już istnieje" });
       }
+    }
 
-      // Sprawdź czy nowy klucz nie jest już używany przez inny projekt
-      if (key !== project.key) {
-        const existingProject = await Project.findOne({
-          key,
-          _id: { $ne: projectId },
-        });
-        if (existingProject) {
-          return res
-            .status(400)
-            .json({ message: "Projekt z tym kluczem już istnieje" });
-        }
-      }
-
-      // Aktualizuj projekt
-      project.name = name;
-      project.key = key;
+    // Aktualizuj projekt
+    project.name = name;
+    project.key = key;
+    // Tylko zarządca może zmieniać role i managera
+    if (user.role.name === "Zarządca") {
       project.visibleToRoles = visibleToRoles;
       project.manager = manager;
-
-      await project.save();
-      await logEvent(
-        "UPDATE_PROJECT",
-        req.user.userId,
-        `Updated project: ${name}`
-      );
-
-      // Pobierz zaktualizowany projekt z populacją
-      const updatedProject = await Project.findById(projectId)
-        .populate("ticketTypes")
-        .populate("manager", "login");
-
-      res.json(updatedProject);
-    } catch (error) {
-      console.error("Project update error:", error);
-      res.status(500).json({ message: "Błąd podczas aktualizacji projektu" });
     }
+
+    await project.save();
+    await logEvent(
+      "UPDATE_PROJECT",
+      req.user.userId,
+      `Updated project: ${name}`
+    );
+
+    // Pobierz zaktualizowany projekt z populacją
+    const updatedProject = await Project.findById(projectId)
+      .populate("ticketTypes")
+      .populate("manager", "login");
+
+    res.json(updatedProject);
+  } catch (error) {
+    console.error("Project update error:", error);
+    res.status(500).json({ message: "Błąd podczas aktualizacji projektu" });
   }
-);
+});
 
 // Endpoint do edycji własnego profilu
 app.patch("/api/profile", authMiddleware, async (req, res) => {
